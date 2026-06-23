@@ -6,23 +6,18 @@
 #    2. 推送到 GitHub Container Registry (ghcr.io)
 #    3. 自动给镜像打上版本标签
 #
-#  注意：本仓库是 monorepo 结构，项目代码在 encrypted-notes-v2/ 子目录中，
-#        Dockerfile 也在该子目录下，所以 context 需指向 encrypted-notes-v2/
-#
 #  使用方式：
-#    拉取最新镜像：
-#      docker pull ghcr.io/你的GitHub用户名/encrypted-platform-cf-v2:latest
+#    拉取镜像：docker pull ghcr.io/xiebinhqy/encrypted-platform-cf-v2:latest
 #
 #    运行容器：
 #      docker run -d -p 3000:3000 \
 #        -e JWT_SECRET=你的密钥 \
 #        -v notes-data:/app/backend/data \
-#        ghcr.io/你的GitHub用户名/encrypted-platform-cf-v2:latest
+#        ghcr.io/xiebinhqy/encrypted-platform-cf-v2:latest
 # ============================================
 
 name: Build and Push Docker Image
 
-# 触发条件
 on:
   push:
     branches: [ main ]
@@ -37,8 +32,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  # 项目在 monorepo 的子目录中
-  PROJECT_DIR: encrypted-notes-v2
 
 jobs:
   build-and-push:
@@ -55,11 +48,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Step 2: 确认项目目录存在
-      - name: Verify project directory
-        run: |
-          ls -la ${{ env.PROJECT_DIR }}/
-          ls -la ${{ env.PROJECT_DIR }}/Dockerfile
+      # Step 2: 确认 Dockerfile 存在
+      - name: Verify Dockerfile
+        run: ls -la Dockerfile
 
       # Step 3: 安装 QEMU（多架构构建支持）
       - name: Set up QEMU
@@ -91,12 +82,12 @@ jobs:
             type=sha,format=short
 
       # Step 7: 构建并推送 Docker 镜像
-      # 注意：context 指向 encrypted-notes-v2/，因为 Dockerfile 在该子目录中
+      # Dockerfile 在仓库根目录，context 使用当前目录即可
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.PROJECT_DIR }}
-          file: ${{ env.PROJECT_DIR }}/Dockerfile
+          context: .
+          file: ./Dockerfile
           build-args: |
             BUILD_VERSION=${{ github.sha }}
             BUILD_DATE=${{ github.event.repository.updated_at }}
