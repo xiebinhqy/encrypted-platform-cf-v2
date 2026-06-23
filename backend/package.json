@@ -1,0 +1,31 @@
+{
+  "name": "encrypted-notes-v2",
+  "version": "1.0.0",
+  "description": "加密笔记项目v2版本 — 支持 Cloudflare Workers + Docker 双模式",
+  "main": "server.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "export:staging": "node scripts/export_staging_data.js",
+    "export:staging:db": "node scripts/export_staging_data.js --db-only",
+    "export:staging:kv": "node scripts/export_staging_data.js --kv-only",
+    "import:staging": "node scripts/import_staging_data.js",
+    "import:staging:clean": "node scripts/import_staging_data.js --drop-tables",
+    "docker:start": "node server.js",
+    "docker:dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "better-sqlite3": "^11.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
