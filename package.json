@@ -1,0 +1,19 @@
+{
+  "name": "encrypted-notes-v2",
+  "version": "1.0.0",
+  "description": "encrypted-notes-v2/\r ├── backend/                    # 后端API（部署到Cloudflare Worker）\r │   ├── src/\r │   │   ├── config/             # 配置文件（不涉及加密）\r │   │   │   ├── constants.js    # 全局常量（域名、版本号等）\r │   │   │   └── database.js     # 数据库连接配置\r │   │   ├── middleware/         # 中间件层\r │   │   │   ├── cors.js         # CORS处理\r │   │   │   └── auth.js         # 权限校验\r │   │   ├── routes/             # 路由层（只处理请求分发）\r │   │   │   ├── user.routes.js  # 用户相关路由\r │   │   │   ├── note.routes.js  # 笔记相关路由\r │   │   │   ├── category.routes.js\r │   │   │   └── share.routes.js\r │   │   ├── services/           # 业务逻辑层（核心）\r │   │   │   ├── user.service.js\r │   │   │   ├── note.service.js\r │   │   │   ├── category.service.js\r │   │   │   └── share.service.js\r │   │   ├── utils/              # 工具函数\r │   │   │   ├── response.js     # 统一响应格式\r │   │   │   └── error.js        # 统一错误处理\r │   │   └── index.js            # 入口文件\r │   ├── wrangler.toml           # Cloudflare配置文件\r │   └── package.json\r ├── frontend/                   # 前端（部署到Cloudflare Pages/Worker）\r │   ├── shared/                 # 共享核心代码（⚠️ 绝对不能修改加密逻辑）\r │   │   ├── crypto/             # 加密核心（原index.html中的加密代码）\r │   │   │   ├── aes.js          # AES-GCM加密/解密\r │   │   │   ├── key.js          # 密钥派生\r │   │   │   └── index.js        # 加密入口\r │   │   ├── api/                # API调用层\r │   │   │   ├── user.api.js\r │   │   │   ├── note.api.js\r │   │   │   └── index.js\r │   │   └── utils/              # 通用工具\r │   ├── classic/                # 经典版UI（原界面，100%兼容）\r │   │   ├── index.html\r │   │   ├── css/\r │   │   ├── js/\r │   │   └── assets/\r │   └── modern/                 # 现代版UI（新开发）\r │       ├── index.html\r │       ├── css/\r │       ├── js/\r │       └── assets/\r ├── docs/                       # 文档\r └── README.md",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

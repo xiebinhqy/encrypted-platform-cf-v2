@@ -1,0 +1,78 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+backend/package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# VS Code local history
+.history/
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# External projects (parent directory)
+../*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# wrangler runtime cache
+.wrangler/
+**/.wrangler/
+
+# Build output
+**/dist/
+
+# Backend runtime files
+backend/wrangler-dev-err.log
+backend/wrangler-dev.log
+backend/verify_*.txt
+backend/db_*.txt
+backend/import_log.txt
+backend/test-output.txt
+backend/*.json
+backend/wrangler-version.txt
+backend/.wrangler/
+
+# Frontend runtime files
+frontend/classic/.wrangler/
+frontend/classic/dist/
+
+# Check scripts (local testing only)
+check_staging.ps1
+check_staging2.ps1
+check_staging3.ps1
+
+# Exported staging data (contains sensitive data)
+backend/staging-data/
+
+# Docker / local SQLite data
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+d1_exports/
+
+# GitHub Actions
+.github/workflows/*.yml
+!.github/workflows/docker-build.yml

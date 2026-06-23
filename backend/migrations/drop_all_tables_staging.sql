@@ -1,0 +1,9 @@
+-- DROP 所有 staging 环境的旧表（从零重建）
+DROP TABLE IF EXISTS shares;
+DROP TABLE IF EXISTS note_versions;
+DROP TABLE IF EXISTS event_logs;
+DROP TABLE IF EXISTS notes;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS user_settings;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS _migrations;

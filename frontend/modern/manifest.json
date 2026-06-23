@@ -1,0 +1,21 @@
+{
+  "name": "加密笔记 - 私人笔记",
+  "short_name": "加密笔记",
+  "description": "端对端加密私人笔记，数据在浏览器加密，服务器只存密文",
+  "start_url": "/modern/index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/modern/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/modern/icons/icon-192.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+# ============================================
+#  🔐 Encrypted Notes v2 — Docker Compose
+#
+#  两种使用方式：
+#    1. 从 GitHub Container Registry 拉取（推荐）
+#       修改 IMAGE_TAG 为你的镜像地址
+#
+#    2. 本地构建
+#       取消注释下面的 build 配置，注释掉 image 配置
+#       运行: docker compose build
+# ============================================
+
+services:
+  encrypted-notes:
+    # ---- 从 GitHub Container Registry 拉取 ----
+    # 第一次使用时，修改为你的镜像地址
+    # 格式: ghcr.io/你的GitHub用户名/encrypted-notes-v2:latest
+    image: ghcr.io/xiebinhqy/encrypted-platform-cf-v2:latest
+
+    # ---- 本地构建模式（取消注释以使用） ----
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    container_name: encrypted-notes
+    ports:
+      # 如需仅本地访问，改为 "127.0.0.1:3000:3000"
+      - "3000:3000"
+    volumes:
+      # 持久化 SQLite 数据库文件
+      - notes-data:/app/backend/data
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/backend/data/notes.db
+      - JWT_SECRET=${JWT_SECRET:-change-this-to-a-random-secret-in-production}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - ALLOW_PUBLIC_REGISTRATION=${ALLOW_PUBLIC_REGISTRATION:-true}
+      - PBKDF2_ITERATIONS=${PBKDF2_ITERATIONS:-100000}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  notes-data:
+    driver: local

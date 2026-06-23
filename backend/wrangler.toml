@@ -1,0 +1,161 @@
+# ==============================================
+# 后端 API Worker - 处理 API 请求 + 提供前端静态资源
+# 本地开发时，cd backend && npm run dev → 8787 端口同时提供 API 和前端页面
+# ==============================================
+name = "notes-backend-api"
+main = "src/index.js"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ==============================================
+# 静态资源服务（绑定到 frontend/ 目录）
+# 目录包含：modern/ classic/ shared/
+# ==============================================
+[assets]
+directory = "../frontend"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "none"
+
+# ==============================================
+# 本地开发配置
+# ==============================================
+[dev]
+port = 8787
+local_protocol = "http"
+
+# ==============================================
+# 全局变量配置（所有环境共享的默认值）
+# ==============================================
+[vars]
+ENVIRONMENT = "development"
+ALLOW_PUBLIC_REGISTRATION = "true"
+# JWT_SECRET 已迁移到 Cloudflare Secrets（通过 wrangler secret put 设置）
+PBKDF2_ITERATIONS = "100000"
+ADMIN_EMAIL = "deattorxb@gmail.com"
+
+# ==============================================
+# 本地环境 - D1 数据库绑定
+# ==============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "staging-notes-db"
+database_id = "815c893f-b1b3-4f05-b737-c544becdaa0f"
+
+[[d1_databases]]
+binding = "BACKUP_DB"
+database_name = "staging-notes-backup"
+database_id = "461970e4-1ff6-4ab9-804e-6a9d5b07f958"
+
+# ==============================================
+# 本地环境 - KV 命名空间绑定
+# ==============================================
+[[kv_namespaces]]
+binding = "LOGIN_RATE_LIMIT"
+id = "752f93008c2e4fdeb17fa8456f6fdad8"
+
+[[kv_namespaces]]
+binding = "NOTE_HISTORY"
+id = "db4e2eded4084eafa2b7b59e1ca39fe1"
+
+[[kv_namespaces]]
+binding = "NOTES_BACKUP"
+id = "c4cf44f2a5d547f68df71ab772995635"
+
+[[kv_namespaces]]
+binding = "NOTES_CACHE"
+id = "d312d0824ebf40bf92c54e1f71e1281f"
+
+[[kv_namespaces]]
+binding = "SYSTEM_EVENTS"
+id = "6cc9a024575a4de28c049f0d809cf778"
+
+# ==============================================
+# 测试环境（staging）
+# ==============================================
+[env.staging]
+name = "notes-api-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+ADMIN_EMAIL = "deattorxb@gmail.com"
+ALLOW_PUBLIC_REGISTRATION = "true"
+# JWT_SECRET 已迁移到 Cloudflare Secrets（通过 wrangler secret put 设置）
+PBKDF2_ITERATIONS = "100000"
+TURNSTILE_SECRET_KEY = "0x4AAAAAAADG-mG-YfUq8IAKOff7V3YmJAY"
+FRONTEND_DOMAIN = "https://notestest.dee.us.kg"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "staging-notes-db"
+database_id = "815c893f-b1b3-4f05-b737-c544becdaa0f"
+
+[[env.staging.d1_databases]]
+binding = "BACKUP_DB"
+database_name = "staging-notes-backup"
+database_id = "461970e4-1ff6-4ab9-804e-6a9d5b07f958"
+
+[[env.staging.kv_namespaces]]
+binding = "LOGIN_RATE_LIMIT"
+id = "752f93008c2e4fdeb17fa8456f6fdad8"
+
+[[env.staging.kv_namespaces]]
+binding = "NOTE_HISTORY"
+id = "db4e2eded4084eafa2b7b59e1ca39fe1"
+
+[[env.staging.kv_namespaces]]
+binding = "NOTES_BACKUP"
+id = "c4cf44f2a5d547f68df71ab772995635"
+
+[[env.staging.kv_namespaces]]
+binding = "NOTES_CACHE"
+id = "d312d0824ebf40bf92c54e1f71e1281f"
+
+[[env.staging.kv_namespaces]]
+binding = "SYSTEM_EVENTS"
+id = "6cc9a024575a4de28c049f0d809cf778"
+
+# ==============================================
+# 生产环境（production）
+# ==============================================
+[env.production]
+name = "encrypted-notes-production-backend"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+ADMIN_EMAIL = "deattorxb@gmail.com"
+ALLOW_PUBLIC_REGISTRATION = "true"
+# JWT_SECRET 已迁移到 Cloudflare Secrets（通过 wrangler secret put 设置）
+PBKDF2_ITERATIONS = "100000"
+TURNSTILE_SECRET_KEY = "0x4AAAAAAADG-mG-YfUq8IAKOff7V3YmJAY"
+FRONTEND_DOMAIN = "https://notes.dee.us.kg"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "notes-db"
+database_id = "3e67e82c-372c-43a9-81ee-69acb466befb"
+
+[[env.production.d1_databases]]
+binding = "BACKUP_DB"
+database_name = "notes-backup-db"
+database_id = "f0843e11-0b5d-488d-8307-674bf3bcbbdb"
+
+[[env.production.kv_namespaces]]
+binding = "LOGIN_RATE_LIMIT"
+id = "1d4a117d0f4948288289437f01956f83"
+
+[[env.production.kv_namespaces]]
+binding = "NOTE_HISTORY"
+id = "d5fae0ca8b0146389e8c4ee8ae4dfab2"
+
+[[env.production.kv_namespaces]]
+binding = "NOTES_BACKUP"
+id = "cfd23ee25c2b4769a8331def0296f1d9"
+
+[[env.production.kv_namespaces]]
+binding = "NOTES_CACHE"
+id = "cfd23ee25c2b4769a8331def0296f1d9"
+
+[[env.production.kv_namespaces]]
+binding = "SYSTEM_EVENTS"
+id = "cfd23ee25c2b4769a8331def0296f1d9"

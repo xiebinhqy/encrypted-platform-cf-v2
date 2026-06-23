@@ -1,0 +1,719 @@
+/* ============================================================
+   v6.0.0 — 主应用样式（玻璃态深色主题）
+   仪表盘 / 系统 / 分析 / 事件 / 设置 页面
+   ============================================================ */
+
+/* ===================== 基础布局 ===================== */
+body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ===================== 侧边栏 ===================== */
+.sidebar::-webkit-scrollbar { display: none; }
+.sidebar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===================== 图表容器 ===================== */
+.chart-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+/* ===================== 数字增长动画 ===================== */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+  animation: countUp 0.5s ease-out forwards;
+}
+
+/* ===================== 工具类 ===================== */
+.compact-gap { gap: 0.75rem; }
+.compact-card { padding: 1.25rem; }
+
+/* ===================== 新建笔记按钮 ===================== */
+.new-note-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  width: 135px;
+  height: 40px;
+}
+.new-note-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ===================== 导航选项卡 ===================== */
+.nav-tab {
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+.nav-tab:hover {
+  transform: scale(1.05);
+  font-weight: 600;
+}
+
+/* ===================== 对话框 ===================== */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+.dialog-content {
+  background-color: #1e293b;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: min(56vw, 85vh);
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  border: 1px solid #334155;
+}
+.dialog-content.small { max-width: 600px; max-height: min(56vw, 85vh); }
+.dialog-content.medium { max-width: 900px; max-height: min(56vw, 85vh); }
+
+/* 分类相关对话框：扁平宽屏比例 */
+#new-category-dialog .dialog-content,
+#edit-category-dialog .dialog-content {
+  max-width: 520px;
+  max-height: min(50vw, 80vh);
+}
+#category-dialog .dialog-content {
+  max-width: 900px;
+  max-height: min(56vw, 80vh);
+}
+
+/* ===================== 新建笔记下拉菜单 ===================== */
+.new-note-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  display: none;
+  min-width: 180px;
+}
+.new-note-dropdown.show { display: block; }
+
+/* ===================== 笔记编辑器 ===================== */
+.note-editor { max-height: 80vh; overflow-y: auto; }
+.markdown-preview {
+  background-color: #0f172a;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 200px;
+  border: 1px solid #334155;
+}
+
+/* ===================== 页面切换动画 ===================== */
+.page-content {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.page-content.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===================== 文字内容区域 ===================== */
+.text-content { line-height: 1.6; }
+.text-content p { margin-bottom: 1rem; }
+.text-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* ===================== 系统页面图标 ===================== */
+.system-icon {
+  font-size: 4rem;
+  color: #6366f1;
+  animation: spin 20s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===================== 实时日志 ===================== */
+.log-entry {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #334155;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+.log-entry:last-child { border-bottom: none; }
+.log-time {
+  color: #64748b;
+  margin-right: 0.5rem;
+}
+.log-info { color: #60a5fa; }
+.log-success { color: #34d399; }
+.log-warning { color: #fbbf24; }
+.log-error { color: #f87171; }
+
+/* ===================== 侧边栏激活项 ===================== */
+.sidebar-item-active {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border-left-width: 4px;
+  border-left-color: #818cf8;
+  border-left-style: solid;
+}
+
+/* ===================== 卡片过渡 ===================== */
+.card-transition {
+  transition: all 0.3s ease-in-out;
+}
+.card-transition:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+}
+
+/* ===================== 细滚动条 ===================== */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #334155;
+  border-radius: 2px;
+}
+
+/* ===================== header 与左侧 Logo 区域高度对齐 ===================== */
+/* 左侧 Logo 区域高度 = py-3 (12px*2) + h-10 (40px) = 64px */
+/* 确保右侧 header 底部 border 线与左侧 Logo 区域底部 border 线对齐 */
+.main-header {
+  height: 64px;
+}
+
+/* ============================================================
+   版本历史与恢复对话框样式
+   ============================================================ */
+
+/* ===================== 恢复对话框 ===================== */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  max-width: 680px;
+  width: 92%;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+
+.restore-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #334155;
+}
+.restore-dialog-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #e2e8f0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.modal-close-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #e2e8f0;
+}
+
+.restore-dialog-body {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.restore-info {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.restore-info-item {
+  display: flex;
+  gap: 0.5rem;
+}
+.restore-label {
+  color: #94a3b8;
+}
+.restore-time {
+  color: #cbd5e1;
+}
+
+.restore-stats {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+.stat-add { color: #4ade80; }
+.stat-del { color: #f87171; }
+.stat-equal { color: #94a3b8; }
+
+.restore-diff {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 0.75rem;
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid #1e293b;
+}
+
+.diff-pre {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.diff-insert {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.diff-delete {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border-radius: 2px;
+  padding: 0 1px;
+  text-decoration: line-through;
+}
+.diff-equal {
+  color: #94a3b8;
+}
+
+.restore-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid #334155;
+}
+
+/* ===================== 按钮样式 ===================== */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.25);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+.btn-secondary {
+  background: #334155;
+  color: #cbd5e1;
+}
+.btn-secondary:hover {
+  background: #475569;
+}
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* ===================== 版本历史面板 ===================== */
+.version-history-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: #1e293b;
+  border-left: 1px solid #334155;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.vh-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #334155;
+}
+.vh-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+.vh-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.vh-close-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #e2e8f0;
+}
+
+.vh-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.vh-loading, .vh-error, .vh-empty {
+  text-align: center;
+  padding: 1.5rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+.vh-empty-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.vh-version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vh-version-item {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+.vh-version-item:hover {
+  border-color: #475569;
+  background: #152032;
+}
+
+.vh-version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.vh-version-label {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+.vh-version-num {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.vh-version-meta {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.vh-version-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.vh-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+.vh-btn:hover {
+  border-color: #475569;
+  color: #e2e8f0;
+  background: rgba(255,255,255,0.03);
+}
+.vh-btn-restore:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.vh-compare-section {
+  border-top: 1px solid #334155;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+.vh-compare-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.vh-compare-header span {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+.vh-btn-close-compare {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.vh-btn-close-compare:hover {
+  color: #e2e8f0;
+}
+
+.vh-compare-stats {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.vh-compare-diff {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 0.5rem;
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid #1e293b;
+  margin: 0 0.5rem;
+}
+
+.vh-compare-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem;
+}
+
+.vh-compare-stats span { color: #94a3b8; font-weight: 500; }
+
+/* ===================== 笔记行 Hover 提示 ===================== */
+.note-tooltip-wrapper {
+  position: relative;
+}
+
+.note-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 280px;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.note-tooltip-wrapper:hover .note-tooltip {
+  opacity: 1;
+}
+
+.note-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.note-tooltip-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.note-tooltip-title {
+  color: #e2e8f0;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-tooltip-meta {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.note-tooltip-meta span {
+  color: #cbd5e1;
+}
+
+/* ===================== Toast 通知提示 ===================== */
+.custom-alert {
+  position: fixed;
+  top: 76px;
+  right: 20px;
+  z-index: 10001;
+  min-width: 260px;
+  max-width: 340px;
+  animation: toastSlideIn 0.3s ease-out;
+}
+.custom-alert.toast-fade-out {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ===================== 回收站卡片状态 ===================== */
+.trash-status-active {
+  color: #f87171 !important;
+}
+.trash-status-empty {
+  color: #34d399 !important;
+}
+
+/* ===================== 数据加载中遮罩 ===================== */
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+#loading-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+#loading-overlay .loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #334155;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+#loading-overlay .loader-text {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+#loading-overlay .loader-subtext {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* ===================== 版本历史按钮 ===================== */
+.note-history-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.note-history-btn:hover {
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+}

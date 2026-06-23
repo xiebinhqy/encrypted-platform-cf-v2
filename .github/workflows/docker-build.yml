@@ -1,0 +1,108 @@
+# ============================================
+#  🔐 Encrypted Notes v2 — Docker 自动构建
+#  
+#  每次 push 到 main 分支（或创建 tag）时：
+#    1. 自动构建 Docker 镜像
+#    2. 推送到 GitHub Container Registry (ghcr.io)
+#    3. 自动给镜像打上版本标签
+#
+#  注意：本仓库是 monorepo 结构，项目代码在 encrypted-notes-v2/ 子目录中，
+#        Dockerfile 也在该子目录下，所以 context 需指向 encrypted-notes-v2/
+#
+#  使用方式：
+#    拉取最新镜像：
+#      docker pull ghcr.io/你的GitHub用户名/encrypted-platform-cf-v2:latest
+#
+#    运行容器：
+#      docker run -d -p 3000:3000 \
+#        -e JWT_SECRET=你的密钥 \
+#        -v notes-data:/app/backend/data \
+#        ghcr.io/你的GitHub用户名/encrypted-platform-cf-v2:latest
+# ============================================
+
+name: Build and Push Docker Image
+
+# 触发条件
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - '.gitignore'
+      - '*.md'
+  release:
+    types: [ published ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  # 项目在 monorepo 的子目录中
+  PROJECT_DIR: encrypted-notes-v2
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      # Step 1: 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step 2: 确认项目目录存在
+      - name: Verify project directory
+        run: |
+          ls -la ${{ env.PROJECT_DIR }}/
+          ls -la ${{ env.PROJECT_DIR }}/Dockerfile
+
+      # Step 3: 安装 QEMU（多架构构建支持）
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # Step 4: 安装 Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 5: 登录 GitHub Container Registry
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 6: 生成镜像标签
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      # Step 7: 构建并推送 Docker 镜像
+      # 注意：context 指向 encrypted-notes-v2/，因为 Dockerfile 在该子目录中
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.PROJECT_DIR }}
+          file: ${{ env.PROJECT_DIR }}/Dockerfile
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

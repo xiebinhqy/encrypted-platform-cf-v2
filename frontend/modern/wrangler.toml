@@ -1,0 +1,36 @@
+# ==============================================
+# 现代版前端 - wrangler 配置
+# 独立部署到 Cloudflare Worker，与后端 API 分离
+# ==============================================
+name = "notes-modern"
+main = "_worker.js"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ==============================================
+# 静态资源服务
+# ==============================================
+[assets]
+directory = "."
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "single-page-application"
+
+# ==============================================
+# 本地开发配置
+# ==============================================
+[dev]
+port = 8790
+local_protocol = "http"
+
+# ==============================================
+# 生产环境
+# ==============================================
+[env.production]
+name = "notes-modern"
+
+# ==============================================
+# 测试环境
+# ==============================================
+[env.staging]
+name = "notes-modern-staging"

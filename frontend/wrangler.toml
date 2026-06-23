@@ -1,0 +1,45 @@
+# ==============================================
+# 前端 Worker - 统一部署经典版 + 新UI
+# assets 绑定到 frontend/ 目录
+# 通过 _worker.js 实现 URL 路由重写
+#
+# 访问路径：
+#   http://localhost:8790/ → 经典版首页
+#   http://localhost:8790/modern/login.html → 新UI登录
+#   http://localhost:8790/modern/index.html → 新UI主页面
+#
+# API 由前端 JS 直接调用后端 Worker（8787端口）
+# ==============================================
+name = "notes-biji"
+main = "_worker.js"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ==============================================
+# 静态资源服务（绑定到 frontend/ 目录）
+# 目录包含 classic/ modern/ shared/
+# ==============================================
+[assets]
+directory = "."
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "none"
+
+# ==============================================
+# 本地开发配置
+# ==============================================
+[dev]
+port = 8790
+local_protocol = "http"
+
+# ==============================================
+# 生产环境
+# ==============================================
+[env.production]
+name = "notes-biji"
+
+# ==============================================
+# 测试环境
+# ==============================================
+[env.staging]
+name = "notes-biji-staging"

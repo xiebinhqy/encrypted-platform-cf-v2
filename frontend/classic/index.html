@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>端对端加密私人笔记</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: '#4f46e5',
+          secondary: '#64748b',
+          success: '#10b981',
+          danger: '#ef4444',
+          warning: '#f59e0b',
+          info: '#3b82f6',
+          dark: {
+            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0',
+            700: '#334155', 800: '#1e293b', 850: '#172033',
+            900: '#0f172a', 950: '#0a0f1d',
+          }
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-dark-900 text-dark-100 safe-area-top safe-area-bottom safe-area-left safe-area-right">
+
+<script type="module" src="js/app.js"></script>
+
+<!-- 锁定警告条 -->
+<div id="lockWarning" class="hidden fixed top-0 left-0 right-0 bg-warning text-dark-950 px-4 py-3 z-[9998] flex items-center justify-center gap-3">
+  <i class="fa-solid fa-clock text-xl"></i>
+  <span>由于长时间无操作，系统将在 <span id="lockWarningCountdown" class="font-bold">30</span> 秒后自动锁定</span>
+  <button onclick="recordActivity()" class="px-3 py-1 bg-dark-900 text-white rounded hover:bg-dark-800 transition-all touch-friendly">
+    <i class="fa-solid fa-hand-pointer mr-1"></i> 继续使用
+  </button>
+</div>
+
+<!-- 分享页面 -->
+<div id="sharePage" class="hidden min-h-screen bg-dark-900">
+  <nav class="w-full px-6 py-4 flex justify-between items-center border-b border-dark-800">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-lock text-primary text-xl"></i>
+      <span class="text-xl font-bold">加密笔记分享</span>
+    </div>
+    <a href="/" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 touch-friendly">返回首页</a>
+  </nav>
+  <div class="max-w-4xl mx-auto p-4 sm:p-8">
+    <h1 id="shareTitle" class="text-2xl sm:text-3xl font-bold mb-6"></h1>
+    <div id="shareContent" class="markdown-body"></div>
+  </div>
+</div>
+
+<!-- 登录页 -->
+<div id="loginPage" class="min-h-screen bg-dark-900 flex flex-col">
+  <nav class="w-full px-4 sm:px-6 py-4 flex justify-between items-center border-b border-dark-800">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-lock text-primary text-xl"></i>
+      <span class="text-lg sm:text-xl font-bold">加密笔记</span>
+    </div>
+    <button onclick="document.getElementById('loginKey').focus()" class="px-3 sm:px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 touch-friendly">
+      登录/创建
+    </button>
+    <button onclick="switchToModern('login')" class="px-3 sm:px-4 py-2 border border-dark-700 text-secondary hover:text-white rounded hover:bg-dark-800 touch-friendly text-sm flex items-center gap-1">
+      <i class="fa-solid fa-arrows-rotate text-xs"></i> 切换到新UI
+    </button>
+  </nav>
+
+  <div class="flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 py-8 sm:py-12 gap-8 sm:gap-12 max-w-7xl mx-auto">
+    <div class="w-full lg:w-1/3 max-w-md">
+      <div class="bg-dark-800 p-6 sm:p-8 rounded-2xl border border-dark-700">
+        <div class="text-center mb-6 sm:mb-8">
+          <div class="text-4xl sm:text-5xl mb-4 text-primary"><i class="fa-solid fa-shield-halved"></i></div>
+          <h2 class="text-xl sm:text-2xl font-bold mb-2">端对端加密私人笔记</h2>
+          <p class="text-secondary text-sm">所有数据浏览器加密后上传，仅你可解密</p>
+        </div>
+        <input type="password" id="loginKey" placeholder="输入主密钥（新密钥自动创建账号）" 
+               class="w-full p-3 bg-dark-900 border border-dark-700 rounded-lg mb-4 sm:mb-6 focus:outline-none focus:ring-2 focus:ring-primary">
+        <button onclick="loginOrRegister()" class="w-full bg-primary hover:bg-primary/90 text-white p-3 rounded-lg font-medium transition-all mb-4 touch-friendly">
+          开始使用
+        </button>
+        <button onclick="showRecoveryModal()" class="w-full text-secondary hover:text-white text-sm touch-friendly">
+          忘记主密钥？使用恢复码重置
+        </button>
+      </div>
+    </div>
+
+    <div class="w-full lg:w-2/3">
+      <h3 class="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center lg:text-left">为什么选择我们的加密笔记？</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div class="bg-dark-800 p-4 sm:p-6 rounded-xl border border-dark-700 hover:border-primary transition-all">
+          <div class="text-2xl sm:text-3xl mb-3 text-primary"><i class="fa-solid fa-lock"></i></div>
+          <h4 class="text-lg sm:text-xl font-bold mb-2">军工级端对端加密</h4>
+          <p class="text-secondary text-sm">AES-GCM加密，内容仅在浏览器加密/解密，任何人无法读取</p>
+        </div>
+        <div class="bg-dark-800 p-4 sm:p-6 rounded-xl border border-dark-700 hover:border-primary transition-all">
+          <div class="text-2xl sm:text-3xl mb-3 text-primary"><i class="fa-solid fa-key"></i></div>
+          <h4 class="text-lg sm:text-xl font-bold mb-2">一次性恢复码</h4>
+          <p class="text-secondary text-sm">主密钥丢失可通过一次性恢复码重置，每个恢复码仅能使用一次</p>
+        </div>
+        <div class="bg-dark-800 p-4 sm:p-6 rounded-xl border border-dark-700 hover:border-primary transition-all">
+          <div class="text-2xl sm:text-3xl mb-3 text-primary"><i class="fa-solid fa-book-open"></i></div>
+          <h4 class="text-lg sm:text-xl font-bold mb-2">完整知识库系统</h4>
+          <p class="text-secondary text-sm">自动按分类归纳笔记，飞书同款知识库体验</p>
+        </div>
+        <div class="bg-dark-800 p-4 sm:p-6 rounded-xl border border-dark-700 hover:border-primary transition-all">
+          <div class="text-2xl sm:text-3xl mb-3 text-primary"><i class="fa-solid fa-users"></i></div>
+          <h4 class="text-lg sm:text-xl font-bold mb-2">多空间完全隔离</h4>
+          <p class="text-secondary text-sm">不同主密钥对应完全独立的加密空间，互不干扰</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 移动端侧边栏遮罩 -->
+<div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-[9997]" onclick="closeSidebar()"></div>
+
+<!-- 移动端侧边栏 -->
+<div id="mobileSidebar" class="hidden fixed left-0 top-0 bottom-0 w-72 bg-dark-800 z-[9998] shadow-2xl">
+  <div class="p-4 border-b border-dark-700 flex justify-between items-center">
+    <h2 class="text-lg font-bold"><i class="fa-solid fa-book mr-2"></i> 导航</h2>
+    <button onclick="closeSidebar()" class="text-secondary hover:text-white touch-friendly">
+      <i class="fa-solid fa-times text-xl"></i>
+    </button>
+  </div>
+  <div class="p-4 overflow-y-auto scrollbar-hide h-full pb-20">
+    <div id="mobileCategoryList" class="space-y-1"></div>
+  </div>
+</div>
+
+<!-- 主应用界面 -->
+<div id="appPage" class="hidden min-h-screen bg-dark-900 pb-20 md:pb-0">
+  <nav class="w-full px-4 sm:px-6 py-3 flex justify-between items-center border-b border-dark-800 sticky top-0 z-50 bg-dark-900/90 backdrop-blur-sm">
+    <button onclick="toggleSidebar()" class="md:hidden text-secondary hover:text-white touch-friendly">
+      <i class="fa-solid fa-bars text-xl"></i>
+    </button>
+    
+    <h1 class="text-lg sm:text-xl font-bold">
+      <i class="fa-solid fa-book mr-2"></i> 
+      <span class="hidden sm:inline">我的加密笔记</span>
+    </h1>
+    
+    <div class="flex gap-2 sm:gap-3">
+      <div class="hidden md:flex gap-3">
+        <button onclick="switchView('knowledge')" class="px-3 py-1.5 bg-secondary rounded hover:bg-secondary/90 transition-all touch-friendly">
+          <i class="fa-solid fa-book-open mr-1"></i> 知识库
+        </button>
+        <button onclick="showExportModal()" class="px-3 py-1.5 bg-dark-800 rounded hover:bg-dark-700 transition-all touch-friendly">
+          <i class="fa-solid fa-file-export mr-1"></i> 导出
+        </button>
+        <button onclick="showImportModal()" class="px-3 py-1.5 bg-dark-800 rounded hover:bg-dark-700 transition-all touch-friendly">
+          <i class="fa-solid fa-file-import mr-1"></i> 导入
+        </button>
+        <button onclick="showLockSettingsModal()" class="px-3 py-1.5 bg-dark-800 rounded hover:bg-dark-700 transition-all touch-friendly">
+          <i class="fa-solid fa-gear mr-1"></i> 设置
+        </button>
+        <button onclick="showCreateCategoryModal()" class="px-3 py-1.5 bg-dark-800 rounded hover:bg-dark-700 transition-all touch-friendly">
+          <i class="fa-solid fa-folder-plus mr-1"></i> 分类
+        </button>
+        <button onclick="createNewNote()" class="px-3 py-1.5 bg-primary rounded hover:bg-primary/90 transition-all touch-friendly">
+          <i class="fa-solid fa-plus mr-1"></i> 新建笔记
+        </button>
+        <button onclick="logout()" class="px-3 py-1.5 bg-danger rounded hover:bg-danger/90 transition-all touch-friendly">
+          <i class="fa-solid fa-sign-out mr-1"></i> 退出
+        </button>
+        <button onclick="switchToModern('app')" class="px-3 py-1.5 border border-dark-700 text-secondary hover:text-white rounded hover:bg-dark-700 transition-all touch-friendly flex items-center gap-1">
+          <i class="fa-solid fa-arrows-rotate text-xs"></i> 新UI
+        </button>
+      </div>
+      
+      <div class="flex md:hidden gap-2">
+        <button onclick="createNewNote()" class="px-3 py-2 bg-primary rounded hover:bg-primary/90 transition-all touch-friendly">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="w-full px-2 sm:px-4 py-4 sm:py-6 main-content-grid">
+    <div class="grid grid-cols-12 gap-4 sm:gap-6 w-full h-full">
+      <div class="hidden lg:block col-span-2 column-container">
+        <div class="bg-dark-800 rounded-lg p-4 sticky top-0 h-full flex flex-col">
+          <h3 class="font-semibold mb-3 text-dark-100 flex-shrink-0">导航</h3>
+          <div id="categoryList" class="space-y-1 scrollable-content"></div>
+        </div>
+      </div>
+
+      <div id="noteListColumn" class="hidden lg:block col-span-3 column-container">
+        <div class="bg-dark-800 rounded-lg p-4 h-full flex flex-col">
+          <div class="flex justify-between items-center mb-3 flex-shrink-0">
+            <h3 class="font-semibold text-dark-100">笔记列表</h3>
+          </div>
+          <div id="sortControl" class="mb-3 flex-shrink-0"></div>
+          <div id="notesList" class="space-y-3 scrollable-content scrollbar-hide"></div>
+        </div>
+      </div>
+
+      <div id="contentColumn" class="col-span-12 lg:col-span-7 column-container">
+        <!-- 仪表盘视图 -->
+        <div id="dashboardView" class="bg-dark-800 rounded-lg p-4 sm:p-6 h-full flex flex-col">
+          <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex-shrink-0">数据总览</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8 flex-shrink-0">
+            <div class="bg-dark-900 p-3 sm:p-4 rounded-xl border border-dark-700">
+              <div class="text-secondary text-xs sm:text-sm mb-1">总笔记数</div>
+              <div class="text-xl sm:text-3xl font-bold" id="statNotes">0</div>
+            </div>
+            <div class="bg-dark-900 p-3 sm:p-4 rounded-xl border border-dark-700 cursor-pointer hover:border-primary transition-all" onclick="showAllCategoriesModal()">
+              <div class="text-secondary text-xs sm:text-sm mb-1">总分类数</div>
+              <div class="text-xl sm:text-3xl font-bold" id="statCats">0</div>
+            </div>
+            <div class="bg-dark-900 p-3 sm:p-4 rounded-xl border border-dark-700 cursor-pointer hover:border-primary transition-all" onclick="showAllTagsModal()">
+              <div class="text-secondary text-xs sm:text-sm mb-1">总标签数</div>
+              <div class="text-xl sm:text-3xl font-bold" id="statTags">0</div>
+            </div>
+            <div class="bg-dark-900 p-3 sm:p-4 rounded-xl border border-dark-700 cursor-pointer hover:border-info transition-all" onclick="switchView('drafts')">
+              <div class="text-secondary text-xs sm:text-sm mb-1">待保存草稿</div>
+              <div class="text-xl sm:text-3xl font-bold text-info" id="statDrafts">0</div>
+            </div>
+            <div class="bg-dark-900 p-3 sm:p-4 rounded-xl border border-dark-700 cursor-pointer hover:border-danger transition-all col-span-2 sm:col-span-1" onclick="switchView('recycleBin')">
+              <div class="text-secondary text-xs sm:text-sm mb-1">回收站</div>
+              <div class="text-xl sm:text-3xl font-bold text-danger" id="statRecycleBin">0</div>
+            </div>
+          </div>
+
+          <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex-shrink-0">最近更新</h3>
+          <div id="recentNotes" class="grid grid-cols-1 gap-3 scrollable-content scrollbar-hide"></div>
+        </div>
+
+        <!-- 编辑器视图 -->
+        <div id="editorView" class="hidden bg-dark-800 rounded-lg p-4 sm:p-6 h-full flex flex-col">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 flex-shrink-0">
+            <div id="noteMeta" class="text-sm text-secondary flex items-center flex-wrap gap-2"></div>
+            <div class="flex items-center gap-4">
+              <div id="noteWordCount" class="text-sm text-secondary"></div>
+              <div id="draftIndicator" class="text-sm draft-indicator"></div>
+            </div>
+          </div>
+          <input type="text" id="noteTitle" placeholder="笔记标题" 
+                 class="w-full text-xl sm:text-2xl font-bold bg-dark-900 border-b border-dark-700 rounded p-3 mb-4 focus:outline-none focus:border-primary flex-shrink-0">
+          <div class="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap flex-shrink-0">
+            <select id="noteCategory" class="bg-dark-900 border border-dark-700 rounded p-2 focus:outline-none focus:ring-1 focus:ring-primary">
+              <option value="">无分类</option>
+            </select>
+            <input type="text" id="noteTags" placeholder="标签，用逗号分隔" 
+                   class="flex-1 min-w-[200px] bg-dark-900 border border-dark-700 rounded p-2 focus:outline-none focus:ring-1 focus:ring-primary">
+            <button onclick="showShareModal()" class="px-3 py-2 bg-success rounded hover:bg-success/90 transition-all touch-friendly">
+              <i class="fa-solid fa-share-nodes mr-1"></i> 分享
+            </button>
+          </div>
+          <div id="noteContent" contenteditable="true" rows="12" placeholder="在这里写笔记，支持富文本编辑..." 
+               class="w-full bg-dark-900 border border-dark-700 rounded p-3 mb-4 min-h-[240px] max-h-[60vh] overflow-y-auto focus:outline-none focus:ring-1 focus:ring-primary scrollable-content note-editor-content"></div>
+          <div class="flex gap-3 justify-end flex-wrap flex-shrink-0">
+            <button onclick="deleteCurrentNote()" class="px-4 py-2 bg-danger rounded hover:bg-danger/90 transition-all touch-friendly">
+              <i class="fa-solid fa-trash mr-1"></i> 删除笔记
+            </button>
+            <button onclick="saveCurrentNote()" class="px-6 py-2 bg-primary rounded hover:bg-primary/90 transition-all touch-friendly">
+              <i class="fa-solid fa-save mr-1"></i> 保存笔记
+            </button>
+          </div>
+        </div>
+
+        <!-- 草稿管理视图 -->
+        <div id="draftsView" class="hidden bg-dark-800 rounded-lg p-4 sm:p-6 h-full flex flex-col">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 flex-shrink-0">
+            <h2 class="text-xl sm:text-2xl font-bold"><i class="fa-solid fa-file-pen mr-2 text-info"></i> 草稿管理</h2>
+            <button onclick="createNewNote()" class="px-4 py-2 bg-primary rounded hover:bg-primary/90 transition-all touch-friendly">
+              <i class="fa-solid fa-plus mr-1"></i> 新建草稿
+            </button>
+          </div>
+          <div id="draftsList" class="scrollable-content scrollbar-hide"></div>
+        </div>
+
+        <!-- 回收站视图 -->
+        <div id="recycleBinView" class="hidden bg-dark-800 rounded-lg p-4 sm:p-6 h-full flex flex-col">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 flex-shrink-0">
+            <h2 class="text-xl sm:text-2xl font-bold"><i class="fa-solid fa-trash mr-2 text-danger"></i> 回收站 (<span id="recycleBinCount">0</span> 篇)</h2>
+            <button onclick="emptyRecycleBin()" class="px-4 py-2 bg-danger rounded hover:bg-danger/90 transition-all touch-friendly">
+              <i class="fa-solid fa-trash-can mr-1"></i> 清空回收站
+            </button>
+          </div>
+          <div id="recycleBinList" class="scrollable-content scrollbar-hide"></div>
+        </div>
+
+        <!-- 知识库视图 -->
+        <div id="knowledgeView" class="hidden bg-dark-850 rounded-lg knowledge-container grid grid-cols-12 overflow-hidden">
+          <div class="hidden sm:block col-span-3 border-r border-dark-700 p-4 flex flex-col overflow-hidden">
+            <div class="mb-4 flex-shrink-0">
+              <h2 class="text-lg font-bold mb-3"><i class="fa-solid fa-book-open mr-2"></i> 知识库</h2>
+              <div class="relative">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-secondary"></i>
+                <input id="knowledgeSearch" type="text" placeholder="搜索文档" 
+                       class="w-full pl-9 pr-3 py-2 bg-dark-900 border border-dark-700 rounded focus:outline-none focus:ring-1 focus:ring-primary">
+              </div>
+            </div>
+            <div id="knowledgeTree" class="flex-1 overflow-y-auto scrollbar-hide space-y-1"></div>
+          </div>
+
+          <div class="col-span-12 sm:col-span-9 flex flex-col overflow-hidden">
+            <div class="border-b border-dark-700 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 flex-shrink-0">
+              <div id="knowledgeBreadcrumb" class="text-sm flex items-center flex-wrap"></div>
+              <div class="flex gap-2">
+                <button onclick="document.getElementById('knowledgeSearchMobile').focus()" class="sm:hidden px-3 py-1.5 bg-dark-700 rounded hover:bg-dark-600 transition-all touch-friendly">
+                  <i class="fa-solid fa-search"></i>
+                </button>
+                <button onclick="editCurrentKnowledgeNote()" class="px-3 py-1.5 bg-primary rounded hover:bg-primary/90 transition-all touch-friendly">
+                  <i class="fa-solid fa-edit mr-1"></i> 编辑
+                </button>
+              </div>
+            </div>
+            
+            <div class="sm:hidden p-4 border-b border-dark-700 flex-shrink-0">
+              <div class="relative">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-secondary"></i>
+                <input id="knowledgeSearchMobile" type="text" placeholder="搜索文档" 
+                       class="w-full pl-9 pr-3 py-2 bg-dark-900 border border-dark-700 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                       oninput="searchKeyword = this.value.toLowerCase(); renderKnowledgeTree();">
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-8 max-w-5xl mx-auto w-full">
+              <div id="knowledgeHomeView" class="hidden">
+                <div id="knowledgeHomeContent"></div>
+              </div>
+
+              <div id="knowledgeCategoryView" class="hidden">
+                <div id="knowledgeCategoryContent"></div>
+              </div>
+
+              <div id="knowledgeDetailView" class="hidden">
+                <h1 id="knowledgeDetailTitle" class="text-2xl sm:text-3xl font-bold mb-4"></h1>
+                <div id="knowledgeDetailMeta" class="text-sm text-secondary mb-6 sm:mb-8"></div>
+                <div id="knowledgeDetailContent" class="markdown-body"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 移动端底部导航 -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-700 z-50 bottom-nav-enter safe-area-bottom">
+    <div class="flex justify-around items-center py-2">
+      <button onclick="switchView('dashboard')" class="bottom-nav-item flex flex-col items-center py-2 px-4 rounded-lg text-secondary transition-all touch-friendly" data-view="dashboard">
+        <i class="fa-solid fa-chart-line text-xl mb-1"></i>
+        <span class="text-xs">仪表盘</span>
+      </button>
+      <button onclick="switchView('knowledge')" class="bottom-nav-item flex flex-col items-center py-2 px-4 rounded-lg text-secondary transition-all touch-friendly" data-view="knowledge">
+        <i class="fa-solid fa-book-open text-xl mb-1"></i>
+        <span class="text-xs">知识库</span>
+      </button>
+      <button onclick="createNewNote()" class="flex flex-col items-center py-2 px-4 rounded-lg text-primary transition-all touch-friendly">
+        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center -mt-6 shadow-lg">
+          <i class="fa-solid fa-plus text-xl"></i>
+        </div>
+      </button>
+      <button onclick="switchView('drafts')" class="bottom-nav-item flex flex-col items-center py-2 px-4 rounded-lg text-secondary transition-all touch-friendly" data-view="drafts">
+        <i class="fa-solid fa-file-pen text-xl mb-1"></i>
+        <span class="text-xs">草稿</span>
+      </button>
+      <button onclick="toggleSidebar()" class="flex flex-col items-center py-2 px-4 rounded-lg text-secondary transition-all touch-friendly">
+        <i class="fa-solid fa-bars text-xl mb-1"></i>
+        <span class="text-xs">更多</span>
+      </button>
+    </div>
+  </nav>
+</div>
+
+<!-- 创建分类弹窗 -->
+<div id="createCategoryModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] hidden">
+  <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md mx-4 modal-fullscreen-xs">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">创建分类</h3>
+      <button onclick="document.getElementById('createCategoryModal').classList.add('hidden')" class="text-secondary hover:text-white touch-friendly">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="mb-6">
+      <label class="block text-sm font-medium mb-2">分类名称</label>
+      <input type="text" id="categoryNameInput" placeholder="请输入分类名称" 
+             class="w-full p-3 bg-dark-900 border border-dark-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button onclick="document.getElementById('createCategoryModal').classList.add('hidden')" class="px-4 py-2 bg-dark-700 rounded hover:bg-dark-600 transition-all touch-friendly">取消</button>
+      <button onclick="createCategoryConfirm()" class="px-4 py-2 bg-primary rounded hover:bg-primary/90 transition-all text-white touch-friendly">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分享模态框 -->
+<div id="shareModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] hidden">
+  <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md mx-4 modal-fullscreen-xs">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">分享笔记</h3>
+      <button onclick="hideShareModal()" class="text-secondary hover:text-white touch-friendly"><i class="fa-solid fa-times"></i></button>
+    </div>
+    
+    <div class="space-y-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">最大观看次数</label>
+        <input type="number" id="shareMaxViews" value="1" min="0" 
+               class="w-full p-2 bg-dark-900 border border-dark-700 rounded focus:outline-none focus:ring-1 focus:ring-primary">
+        <p class="text-xs text-secondary mt-1">0表示永久有效，无次数限制</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">过期时间（小时）</label>
+        <input type="number" id="shareExpires" value="0" min="0" 
+               class="w-full p-2 bg-dark-900 border border-dark-700 rounded focus:outline-none focus:ring-1 focus:ring-primary">
+        <p class="text-xs text-secondary mt-1">0表示永不过期</p>
+      </div>
+    </div>
+
+    <div id="shareResult" class="hidden mb-4 p-3 bg-dark-900 rounded border border-dark-700">
+      <p class="text-sm font-medium mb-2">分享链接已生成：</p>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input type="text" id="shareLink" readonly class="flex-1 p-2 bg-dark-800 border border-dark-700 rounded text-sm">
+        <button onclick="copyShareLink()" class="px-3 py-2 bg-primary rounded text-sm text-white touch-friendly">复制</button>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button onclick="hideShareModal()" class="px-4 py-2 bg-dark-700 rounded hover:bg-dark-600 transition-all touch-friendly">取消</button>
+      <button onclick="createShare()" class="px-4 py-2 bg-primary rounded hover:bg-primary/90 transition-all text-white touch-friendly">生成分享链接</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

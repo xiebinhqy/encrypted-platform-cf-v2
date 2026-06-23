@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<!-- v6.0.0 — 登录页面（玻璃态深色主题） -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>加密笔记 - 安全登录</title>
+
+<!-- Tailwind CSS (预编译版本，替代CDN运行时) -->
+<link rel="stylesheet" href="/modern/css/tailwind.css">
+
+<!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- 本地样式 -->
+<link rel="stylesheet" href="/modern/css/login.css">
+
+<!-- Service Worker 注册 -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</head>
+<body class="font-sans antialiased gradient-bg min-h-screen dark">
+
+<!-- 顶部导航栏 -->
+<nav class="glass-effect border-b border-dark-lighter sticky top-0 z-40">
+  <div class="container mx-auto px-6 py-4">
+    <div class="flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-lock text-white text-xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-white tracking-tight">加密笔记</h1>
+      </div>
+
+      <!-- 导航链接 -->
+      <div class="flex items-center space-x-6 relative">
+        <button id="app-menu-btn" class="text-gray-300 hover:text-white transition-colors text-sm font-medium flex items-center">
+          <i class="fa-solid fa-grid-2 mr-1"></i>
+          <span>应用</span>
+        </button>
+        <button id="notification-btn" class="text-gray-300 hover:text-white transition-colors text-sm font-medium flex items-center relative">
+          <i class="fa-solid fa-bell mr-1"></i>
+          <span>通知</span>
+          <span class="notification-badge"></span>
+        </button>
+        <button id="settings-btn" class="text-gray-300 hover:text-white transition-colors text-sm font-medium flex items-center">
+          <i class="fa-solid fa-gear mr-1"></i>
+          <span>设置</span>
+        </button>
+        <button id="help-btn" class="text-gray-300 hover:text-white transition-colors text-sm font-medium flex items-center">
+          <i class="fa-solid fa-question-circle mr-1"></i>
+          <span>帮助</span>
+        </button>
+        <a href="index.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-md shadow-indigo-500/20">
+          登录/创建
+        </a>
+        <!-- 版本切换 -->
+        <button onclick="switchToClassic('login')" class="border border-dark-lighter hover:bg-dark-lighter text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium flex items-center space-x-1">
+          <i class="fa-solid fa-arrows-rotate text-xs"></i>
+          <span>切换到经典版</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- 应用弹窗 -->
+<div id="app-modal" class="fixed inset-0 bg-dark/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="glass-effect rounded-2xl p-6 w-full max-w-md modal-enter">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-white">应用中心</h3>
+      <button class="close-modal text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="glass-effect rounded-lg p-4 card-transition cursor-pointer">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400"><i class="fa-solid fa-file-alt"></i></div>
+          <div><h4 class="text-white font-medium">笔记编辑器</h4><p class="text-gray-400 text-xs">Markdown/富文本编辑</p></div>
+        </div>
+      </div>
+      <div class="glass-effect rounded-lg p-4 card-transition cursor-pointer">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fa-solid fa-folder"></i></div>
+          <div><h4 class="text-white font-medium">分类管理</h4><p class="text-gray-400 text-xs">自定义笔记分类</p></div>
+        </div>
+      </div>
+      <div class="glass-effect rounded-lg p-4 card-transition cursor-pointer">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-sync"></i></div>
+          <div><h4 class="text-white font-medium">数据同步</h4><p class="text-gray-400 text-xs">多设备实时同步</p></div>
+        </div>
+      </div>
+      <div class="glass-effect rounded-lg p-4 card-transition cursor-pointer">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400"><i class="fa-solid fa-download"></i></div>
+          <div><h4 class="text-white font-medium">数据导出</h4><p class="text-gray-400 text-xs">导出为PDF/Markdown</p></div>
+        </div>
+      </div>
+    </div>
+    <button class="w-full bg-dark-light hover:bg-dark-lighter text-white py-2 rounded-lg transition-colors close-modal">关闭</button>
+  </div>
+</div>
+
+<!-- 通知弹窗 -->
+<div id="notification-modal" class="fixed inset-0 bg-dark/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="glass-effect rounded-2xl p-6 w-full max-w-md modal-enter max-h-[80vh] overflow-hidden flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-white">通知中心</h3>
+      <button class="close-modal text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+    </div>
+    <div class="flex justify-between mb-4">
+      <span class="text-gray-300 text-sm">共 3 条未读通知</span>
+      <button id="mark-all-read" class="text-indigo-400 hover:text-indigo-300 text-sm">标记全部已读</button>
+    </div>
+    <div class="scrollbar-thin overflow-y-auto flex-1 mb-4">
+      <div class="glass-effect rounded-lg p-4 mb-3 border-l-2 border-indigo-500 cursor-pointer hover:bg-dark-light transition-colors">
+        <div class="flex justify-between"><h4 class="text-white font-medium">数据同步完成</h4><span class="text-gray-400 text-xs">5分钟前</span></div>
+        <p class="text-gray-300 text-sm mt-1">您的12条笔记已完成跨设备同步</p>
+      </div>
+      <div class="glass-effect rounded-lg p-4 mb-3 border-l-2 border-indigo-500 cursor-pointer hover:bg-dark-light transition-colors">
+        <div class="flex justify-between"><h4 class="text-white font-medium">恢复码已生成</h4><span class="text-gray-400 text-xs">1小时前</span></div>
+        <p class="text-gray-300 text-sm mt-1">请妥善保管您的恢复码，仅可使用一次</p>
+      </div>
+      <div class="glass-effect rounded-lg p-4 mb-3 cursor-pointer hover:bg-dark-light transition-colors opacity-70">
+        <div class="flex justify-between"><h4 class="text-white font-medium">账号安全提醒</h4><span class="text-gray-400 text-xs">1天前</span></div>
+        <p class="text-gray-300 text-sm mt-1">检测到新设备登录，请确认是否为本人操作</p>
+      </div>
+    </div>
+    <button class="w-full bg-dark-light hover:bg-dark-lighter text-white py-2 rounded-lg transition-colors close-modal">关闭</button>
+  </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div id="settings-modal" class="fixed inset-0 bg-dark/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="glass-effect rounded-2xl p-6 w-full max-w-md modal-enter">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-xl font-bold text-white">系统设置</h3>
+      <button class="close-modal text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+    </div>
+    <div class="mb-6">
+      <h4 class="text-white font-medium mb-3">主题设置</h4>
+      <div class="grid grid-cols-3 gap-3">
+        <button class="theme-btn active bg-dark rounded-lg p-3 border border-indigo-500 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-moon text-xl mb-1 text-indigo-400"></i><span class="text-sm text-white">深色模式</span>
+        </button>
+        <button class="theme-btn bg-light rounded-lg p-3 border border-transparent flex flex-col items-center justify-center">
+          <i class="fa-solid fa-sun text-xl mb-1 text-amber-400"></i><span class="text-sm text-dark">浅色模式</span>
+        </button>
+        <button class="theme-btn bg-gradient-to-r from-dark to-light rounded-lg p-3 border border-transparent flex flex-col items-center justify-center">
+          <i class="fa-solid fa-circle-half-stroke text-xl mb-1 text-purple-400"></i><span class="text-sm text-white">跟随系统</span>
+        </button>
+      </div>
+    </div>
+    <div class="mb-6">
+      <h4 class="text-white font-medium mb-3">语言设置</h4>
+      <select class="w-full bg-dark border border-dark-lighter rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="zh-CN">简体中文</option>
+        <option value="en-US">English</option>
+        <option value="ja-JP">日本語</option>
+      </select>
+    </div>
+    <div class="mb-6">
+      <h4 class="text-white font-medium mb-3">安全设置</h4>
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-gray-300 text-sm">自动锁定时间</span>
+        <select class="bg-dark border border-dark-lighter rounded-lg px-3 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="5">5分钟</option><option value="10" selected>10分钟</option><option value="30">30分钟</option><option value="60">1小时</option>
+        </select>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-gray-300 text-sm">开启两步验证</span>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer" checked>
+          <div class="w-9 h-5 bg-dark-lighter peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+        </label>
+      </div>
+    </div>
+    <div class="flex space-x-3">
+      <button class="flex-1 bg-dark-light hover:bg-dark-lighter text-white py-2 rounded-lg transition-colors close-modal">取消</button>
+      <button class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition-colors">保存设置</button>
+    </div>
+  </div>
+</div>
+
+<!-- 帮助弹窗 -->
+<div id="help-modal" class="fixed inset-0 bg-dark/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="glass-effect rounded-2xl p-6 w-full max-w-md modal-enter max-h-[80vh] overflow-hidden flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-white">帮助中心</h3>
+      <button class="close-modal text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+    </div>
+    <div class="scrollbar-thin overflow-y-auto flex-1 mb-4">
+      <div class="mb-4"><h4 class="text-white font-medium mb-2">🔑 主密钥相关</h4><p class="text-gray-300 text-sm">主密钥是加密/解密所有笔记的核心密码，我们不会存储您的主密钥，丢失后无法恢复（除非使用恢复码）。</p></div>
+      <div class="mb-4"><h4 class="text-white font-medium mb-2">🔄 恢复码使用</h4><p class="text-gray-300 text-sm">恢复码仅可使用一次，用于重置主密钥。生成后请立即保存到安全位置（如密码管理器）。</p></div>
+      <div class="mb-4"><h4 class="text-white font-medium mb-2">🔒 加密机制</h4><p class="text-gray-300 text-sm">所有笔记采用AES-GCM端对端加密，数据在浏览器内完成加密后再上传，服务器仅存储密文。</p></div>
+      <div class="mb-4"><h4 class="text-white font-medium mb-2">💻 多设备同步</h4><p class="text-gray-300 text-sm">登录相同主密钥即可在多设备间同步笔记，同步过程全程加密，确保数据安全。</p></div>
+      <div class="mb-4"><h4 class="text-white font-medium mb-2">📞 联系我们</h4><p class="text-gray-300 text-sm">如有问题请发送邮件至 support@encnote.com，我们会在24小时内回复。</p></div>
+    </div>
+    <button class="w-full bg-dark-light hover:bg-dark-lighter text-white py-2 rounded-lg transition-colors close-modal">我知道了</button>
+  </div>
+</div>
+
+<!-- 主内容区域 -->
+<main class="container mx-auto px-6 py-12">
+  <!-- 已登录提示 -->
+  <div id="login-tip" class="glass-effect rounded-lg p-4 mb-6 border border-indigo-500/30 hidden">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-circle-info text-indigo-400"></i>
+        <div><p class="text-white text-sm">检测到您已登录，点击 <a href="index.html" class="text-indigo-400 hover:text-indigo-300 font-medium">这里</a> 进入控制面板</p></div>
+      </div>
+      <button id="close-tip" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
+    <!-- 左侧登录区域 -->
+    <div class="lg:w-1/2 w-full">
+      <div class="glass-effect rounded-2xl p-8 shadow-xl max-w-lg mx-auto">
+        <div class="flex items-center justify-center mb-6">
+          <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 float-animation">
+            <i class="fa-solid fa-shield-alt text-white text-3xl"></i>
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white text-center mb-2">端对端加密私人笔记</h2>
+        <p class="text-gray-300 text-center mb-8">所有数据在浏览器加密后上传，仅你可解密</p>
+
+        <div class="mb-6">
+          <label class="block text-gray-300 text-sm font-medium mb-2">输入主密钥（新密钥自动创建账号）</label>
+          <div class="relative">
+            <input type="password" id="master-key"
+                   class="w-full bg-dark border border-dark-lighter rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 input-focus pl-12"
+                   placeholder="请输入您的主密钥">
+            <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"><i class="fa-solid fa-key"></i></div>
+            <button id="toggle-password" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"><i class="fa-solid fa-eye"></i></button>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-300 text-sm">密钥强度</span>
+            <span class="text-gray-400 text-sm" id="strength-text">弱</span>
+          </div>
+          <div class="h-2 bg-dark-lighter rounded-full overflow-hidden">
+            <div id="strength-bar" class="h-full bg-red-500 w-1/4 rounded-full"></div>
+          </div>
+        </div>
+
+        <button id="start-btn"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg transition-colors font-medium text-lg shadow-md shadow-indigo-500/20 glow-effect flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+          <i class="fa-solid fa-rocket"></i>
+          <span>开始使用</span>
+        </button>
+
+        <div class="mt-6 text-center">
+          <button id="recovery-code-btn" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors inline-flex items-center space-x-1">
+            <i class="fa-solid fa-key"></i>
+            <span>忘记主密钥？使用恢复码重置</span>
+          </button>
+        </div>
+
+        <div class="mt-8 p-4 bg-dark/50 rounded-lg border border-dark-lighter">
+          <div class="flex items-start space-x-3">
+            <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
+            <div><p class="text-gray-300 text-sm">重要提示：主密钥用于加密您的所有笔记，我们不会存储您的主密钥，一旦丢失将无法恢复您的数据。</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧功能介绍 -->
+    <div class="lg:w-1/2 w-full">
+      <h2 class="text-2xl font-bold text-white mb-8 text-center lg:text-left">为什么选择我们的加密笔记？</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-effect rounded-xl p-6 card-transition border border-dark-lighter">
+          <div class="flex items-start space-x-4">
+            <div class="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400"><i class="fa-solid fa-user-shield text-xl"></i></div>
+            <div><h3 class="text-lg font-semibold text-white mb-2">军工级端对端加密</h3><p class="text-gray-300 text-sm">AES-GCM加密，内容仅在浏览器加密/解密，任何人无法读取</p></div>
+          </div>
+        </div>
+        <div class="glass-effect rounded-xl p-6 card-transition border border-dark-lighter">
+          <div class="flex items-start space-x-4">
+            <div class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400"><i class="fa-solid fa-key text-xl"></i></div>
+            <div><h3 class="text-lg font-semibold text-white mb-2">一次性恢复码</h3><p class="text-gray-300 text-sm">主密钥丢失可通过一次性恢复码重置，每个恢复码仅能使用一次</p></div>
+          </div>
+        </div>
+        <div class="glass-effect rounded-xl p-6 card-transition border border-dark-lighter">
+          <div class="flex items-start space-x-4">
+            <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-book-open text-xl"></i></div>
+            <div><h3 class="text-lg font-semibold text-white mb-2">完整知识库系统</h3><p class="text-gray-300 text-sm">自动按分类归纳笔记，飞书同款知识库体验</p></div>
+          </div>
+        </div>
+        <div class="glass-effect rounded-xl p-6 card-transition border border-dark-lighter">
+          <div class="flex items-start space-x-4">
+            <div class="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400"><i class="fa-solid fa-boxes-stacked text-xl"></i></div>
+            <div><h3 class="text-lg font-semibold text-white mb-2">多空间完全隔离</h3><p class="text-gray-300 text-sm">不同主密钥对应完全独立的加密空间，互不干扰</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 glass-effect rounded-xl p-6 border border-dark-lighter">
+        <h3 class="text-lg font-semibold text-white mb-4">更多强大功能</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex items-center space-x-2"><i class="fa-solid fa-check text-emerald-400"></i><span class="text-gray-300 text-sm">实时同步</span></div>
+          <div class="flex items-center space-x-2"><i class="fa-solid fa-check text-emerald-400"></i><span class="text-gray-300 text-sm">多设备支持</span></div>
+          <div class="flex items-center space-x-2"><i class="fa-solid fa-check text-emerald-400"></i><span class="text-gray-300 text-sm">Markdown支持</span></div>
+          <div class="flex items-center space-x-2"><i class="fa-solid fa-check text-emerald-400"></i><span class="text-gray-300 text-sm">离线访问</span></div>
+        </div>
+      </div>
+
+      <div class="mt-8 grid grid-cols-3 gap-4 text-center">
+        <div class="glass-effect rounded-lg p-4 border border-dark-lighter"><div class="text-2xl font-bold text-white">10K+</div><div class="text-gray-300 text-sm">活跃用户</div></div>
+        <div class="glass-effect rounded-lg p-4 border border-dark-lighter"><div class="text-2xl font-bold text-white">99.9%</div><div class="text-gray-300 text-sm">服务可用性</div></div>
+        <div class="glass-effect rounded-lg p-4 border border-dark-lighter"><div class="text-2xl font-bold text-white">0</div><div class="text-gray-300 text-sm">数据泄露</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部安全认证 -->
+  <div class="mt-16 text-center">
+    <div class="glass-effect rounded-xl p-6 max-w-3xl mx-auto">
+      <h3 class="text-lg font-semibold text-white mb-4">安全认证与合规</h3>
+      <div class="flex flex-wrap items-center justify-center gap-6">
+        <div class="flex items-center space-x-2 text-gray-300"><i class="fa-solid fa-lock text-emerald-400"></i><span>SSL/TLS 加密传输</span></div>
+        <div class="flex items-center space-x-2 text-gray-300"><i class="fa-solid fa-shield-halved text-indigo-400"></i><span>GDPR 合规</span></div>
+        <div class="flex items-center space-x-2 text-gray-300"><i class="fa-solid fa-user-secret text-purple-400"></i><span>零知识架构</span></div>
+        <div class="flex items-center space-x-2 text-gray-300"><i class="fa-solid fa-database text-cyan-400"></i><span>端到端加密</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 恢复码弹窗 -->
+<div id="recovery-modal" class="fixed inset-0 bg-dark/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="glass-effect rounded-2xl p-6 w-full max-w-md modal-enter">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-white">使用恢复码重置密钥</h3>
+      <button class="close-modal text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+    </div>
+    <div class="mb-4">
+      <label class="block text-gray-300 text-sm font-medium mb-2">输入恢复码</label>
+      <input type="text" id="recoveryCode" class="w-full bg-dark border border-dark-lighter rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 input-focus" placeholder="请输入16位恢复码">
+    </div>
+    <div class="mb-6">
+      <label class="block text-gray-300 text-sm font-medium mb-2">设置新主密钥</label>
+      <input type="password" id="newMasterKey" class="w-full bg-dark border border-dark-lighter rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 input-focus" placeholder="请设置新的主密钥（至少8位）">
+    </div>
+    <div class="flex space-x-3">
+      <button class="flex-1 bg-dark-light hover:bg-dark-lighter text-white py-2 rounded-lg transition-colors close-modal">取消</button>
+      <button id="btnResetRecovery" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition-colors">重置密钥</button>
+    </div>
+  </div>
+</div>
+
+<!-- 页脚 -->
+<footer class="border-t border-dark-lighter mt-12">
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex flex-col md:flex-row items-center justify-between">
+      <div class="flex items-center space-x-3 mb-4 md:mb-0">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"><i class="fa-solid fa-lock text-white"></i></div>
+        <span class="text-gray-300">© 2026 加密笔记. 保留所有权利.</span>
+      </div>
+      <div class="flex items-center space-x-6">
+        <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">隐私政策</a>
+        <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">服务条款</a>
+        <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">帮助中心</a>
+        <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">联系我们</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- JS 模块（ES Module） -->
+<script type="module" src="/modern/js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# ==============================================
+# 经典版前端 - wrangler 配置
+# 独立部署到 Cloudflare Worker，与后端 API 分离
+# ==============================================
+name = "notes-biji-staging"
+main = "_worker.js"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ==============================================
+# 静态资源服务
+# ==============================================
+[assets]
+directory = "."
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "single-page-application"
+
+# ==============================================
+# 测试环境（staging）- 前端
+# ==============================================
+[env.staging]
+name = "notes-biji-staging"
+
+# ==============================================
+# 生产环境（production）- 前端
+# ==============================================
+[env.production]
+name = "notes-biji"
