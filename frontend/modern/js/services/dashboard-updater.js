@@ -5,7 +5,7 @@ import AppState from "../core/state.js";
 import { Utils } from "../core/utils.js";
 import { decrypt } from "../../../shared/crypto/index.js";
 import { API_BASE, fetchTrashNotes, restoreNote, permanentDeleteNote, clearTrash, deleteNote as apiDeleteNote } from "../../../shared/api/index.js";
-import { clearAllCache } from "../../../shared/utils/note-cache.js";
+import { clearAllCache, getCachedDashboard, setCachedDashboard } from "../../../shared/utils/note-cache.js";
 
 // 从 standalone-functions 和 category-manager 导入被引用的函数
 import { _previewNote, _editNote, _showCategoryNotes, _updateEditorDialogTitle } from "./standalone-functions.js";
@@ -49,7 +49,7 @@ async function _getRestoreDialog() {
 }
 
 export const DashboardUpdater = {
-  updateStats() {
+  async updateStats() {
     const state = AppState;
     const totalNotes = state.allNotes.length;
     const totalCategories = state.allCategories.length;
@@ -74,6 +74,12 @@ export const DashboardUpdater = {
     }
     if (_countAnimation) _countAnimation.init();
     if (_logManager) _logManager.info(`统计: ${totalNotes} 笔记, ${totalCategories} 分类, ${totalTags} 标签`);
+    // 缓存仪表盘聚合结果（仅在有数据时）
+    if (totalNotes > 0) {
+      try {
+        await setCachedDashboard({ totalNotes, totalCategories, totalTags });
+      } catch (_) {}
+    }
   },
 
   _updateCard(label, value) {

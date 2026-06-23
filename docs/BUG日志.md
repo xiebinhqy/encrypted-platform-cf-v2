@@ -1,5 +1,9 @@
 # BUG 日志
 
+> **最后更新：** 2026-06-23
+
+---
+
 ## 已修复
 
 ### 2026-06-21: v1 旧表兼容问题（title_cipher/name_cipher NOT NULL 约束失败 + 笔记列表缓存不同步）
@@ -52,6 +56,8 @@ ciphertext TEXT NOT NULL
 - 新建分类应成功
 - 刷新页面后笔记和分类仍正常显示
 
+[来源: docs/history/BUG日志-v2.md → 2026-06-21 已修复]
+
 ---
 
 ### 2026-06-20: 创建笔记返回 500 错误
@@ -81,14 +87,10 @@ ciphertext TEXT NOT NULL
 **修复**：
 ```javascript
 console.error("[NOTE ROUTE] 创建笔记失败:", error.message, error.stack);
-// 区分外键约束、唯一约束等错误类型
 ```
 
 #### 问题 3：CORS 缺少 Authorization 头
 前端发送 JWT Token 使用 `Authorization: Bearer <token>` 头，但 `getCorsHeaders()` 的 `Access-Control-Allow-Headers` 中未包含 `Authorization`。
-- 浏览器 CORS 预检（OPTIONS）返回的允许头列表中没有 `Authorization`
-- 浏览器的安全策略会阻止带 `Authorization` 头的实际请求
-- 虽然同源请求不受 CORS 限制，但 Service Worker 拦截并转发 API 请求时可能触发跨域行为
 
 **修复**：在 constants.js 的 CORS 头中增加 `Authorization`：
 ```javascript
@@ -108,7 +110,7 @@ console.error("[NOTE ROUTE] 创建笔记失败:", error.message, error.stack);
 3. `backend/src/config/constants.js` — CORS 头补充
 4. `backend/src/index.js` — 全局错误处理
 
-**验证**：部署到 staging 环境后，冷启动首次迁移应在 10s 内完成，API 恢复正常。后续启动跳过迁移，响应正常。
+[来源: docs/history/BUG日志-v2.md → 2026-06-20 已修复]
 
 ---
 
@@ -120,8 +122,24 @@ console.error("[NOTE ROUTE] 创建笔记失败:", error.message, error.stack);
 
 **修复建议**：在生产环境申请独立的 KV 命名空间用于 `NOTES_CACHE`，与 `NOTES_BACKUP` 分离。
 
+[来源: docs/history/BUG日志-v2.md → 2026-06-20 KV 命名空间冲突]
+
 ---
 
 ## 排查中
 
 - [ ] 暂无
+
+---
+
+## BUG 修复索引
+
+| 日期 | 问题 | 严重度 | 修复文件 |
+|------|------|--------|----------|
+| 2026-06-21 | v1 旧表兼容(title_cipher/name_cipher NULL约束) | 🔴 | note.service.js, category.service.js, v2.routes.js |
+| 2026-06-21 | 笔记列表缓存不同步(await缺失) | 🔴 | note.service.js |
+| 2026-06-20 | 迁移阻塞 + 创建笔记500 | 🔴 | database.js, note.routes.js, constants.js, index.js |
+| 2026-06-20 | CORS缺少Authorization头 | 🟡 | constants.js |
+| 2026-06-20 | KV命名空间冲突(CACHE/BACKUP同名) | 🟡 | wrangler.toml(待手动修复) |
+
+> **文档历史：** v1 [docs/history/BUG日志-v1.md] → v2 [docs/history/BUG日志-v2.md]

@@ -3,7 +3,7 @@
 
 import { decrypt, encrypt } from "../../../shared/crypto/index.js";
 import { API_BASE, fetchNotesPaginated, fetchCategories, fetchNoteById } from "../../../shared/api/index.js";
-import { getCachedNotes, setCachedNotes, getCachedCategories, setCachedCategories } from "../../../shared/utils/note-cache.js";
+import { getCachedNotes, setCachedNotes, getCachedCategories, setCachedCategories, getCachedDashboard, setCachedDashboard, getCachedNoteContent, setCachedNoteContent } from "../../../shared/utils/note-cache.js";
 import AppState from "../core/state.js";
 import { Utils } from "../core/utils.js";
 
@@ -446,13 +446,27 @@ export const DataLoader = {
   async loadNoteContent(noteId) {
     const state = AppState;
     if (!state.isDecrypted) return '';
+    
+    // 1. 优先从内存缓存读取
     const cached = state.noteContentCache[noteId];
     if (cached !== undefined) return cached;
+    
+    // 2. 从内存中的笔记对象读取
     const noteInMemory = state.allNotes.find(n => n.id === noteId);
     if (noteInMemory && noteInMemory.content) {
       state.noteContentCache[noteId] = noteInMemory.content;
       return noteInMemory.content;
     }
+    
+    // 3. 从 IndexedDB 缓存读取
+    const cachedContent = await getCachedNoteContent(noteId);
+    if (cachedContent !== null) {
+      state.noteContentCache[noteId] = cachedContent;
+      if (noteInMemory) noteInMemory.content = cachedContent;
+      return cachedContent;
+    }
+    
+    // 4. 从后端获取
     try {
       const res = await fetchNoteById(API_BASE, state.userId, noteId);
       if (!res.ok) throw new Error('获取笔记内容失败');
@@ -461,8 +475,12 @@ export const DataLoader = {
       const ciphertext = rawNote.ciphertext || rawNote.content || '';
       if (!ciphertext) { state.noteContentCache[noteId] = ''; return ''; }
       const content = await decrypt(ciphertext, state.decryptKey).catch(() => '');
+      
+      // 写入内存缓存 + IndexedDB 缓存
       state.noteContentCache[noteId] = content;
       if (noteInMemory) noteInMemory.content = content;
+      setCachedNoteContent(noteId, content).catch(() => {}); // 后台写入，不阻塞
+      
       return content;
     } catch (e) {
       console.error('获取笔记内容失败:', e);

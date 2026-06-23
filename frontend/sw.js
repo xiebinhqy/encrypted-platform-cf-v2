@@ -1,7 +1,9 @@
-// sw.js v1.0.0 — Service Worker 缓存策略
-// 缓存静态资源，提升二次访问速度和离线体验
+// sw.js v1.1.0 — Service Worker 缓存策略
+// 缓存静态资源 + API 响应，提升二次访问速度
+// 策略：静态资源缓存优先，API 响应 stale-while-revalidate
 
-const CACHE_NAME = 'encrypted-notes-v2-v4';
+const CACHE_NAME = 'encrypted-notes-v2-v5';
+const API_CACHE_NAME = 'encrypted-notes-api-v1';
 const STATIC_ASSETS = [
   '/modern/css/tailwind.css',
   '/modern/css/global.css',
@@ -44,79 +46,84 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// API 请求自动重试函数
-async function fetchWithRetry(request, maxRetries) {
-  let lastError;
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      const response = await fetch(request);
-      // 如果是 503 且还有重试次数，等待后重试
-      if (response.status === 503 && i < maxRetries) {
-        console.warn(`[SW] API 返回 503，第 ${i + 1} 次重试...`);
-        await new Promise(r => setTimeout(r, (i + 1) * 1000)); // 递增延迟
-        continue;
-      }
-      return response;
-    } catch (err) {
-      lastError = err;
-      if (i < maxRetries) {
-        console.warn(`[SW] API 请求失败 (${err.message})，第 ${i + 1} 次重试...`);
-        await new Promise(r => setTimeout(r, (i + 1) * 1000));
-        continue;
+// API 请求：stale-while-revalidate + 自动重试
+async function fetchWithCache(request) {
+  // 尝试从缓存获取
+  const cachedResponse = await caches.open(API_CACHE_NAME).then(cache => cache.match(request));
+  
+  // 并发：从网络获取最新数据
+  const fetchPromise = fetch(request.clone()).then(async (response) => {
+    if (response && response.status === 200) {
+      const cache = await caches.open(API_CACHE_NAME);
+      // 只缓存 GET 请求（非敏感 API）
+      if (request.method === 'GET') {
+        cache.put(request, response.clone());
       }
     }
-  }
-  console.error('[SW] API 请求所有重试均失败:', lastError?.message);
-  return new Response(JSON.stringify({ error: '网络不可用' }), {
-    headers: { 'Content-Type': 'application/json' },
-    status: 503
+    return response;
+  }).catch(async (err) => {
+    console.warn('[SW] API 网络请求失败:', err.message);
+    // 如果有缓存，返回缓存（容忍过期）
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    // 无缓存→返回错误响应
+    return new Response(JSON.stringify({ error: '网络不可用' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 503
+    });
   });
+
+  // 如果有缓存，立即返回（即使可能过期），同时后台更新
+  if (cachedResponse) {
+    // 后台静默更新缓存（不阻塞 UI）
+    fetchPromise.then(() => {}).catch(() => {});
+    return cachedResponse;
+  }
+
+  // 无缓存 → 等待网络结果
+  return fetchPromise;
 }
 
-// 请求拦截：缓存优先策略（静态资源） / 网络优先策略（API请求）
+// 请求拦截
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 1. 跨域请求直接 passthrough（Font Awesome 字体、Google Fonts、CDN 等）
-  //    不拦截、不缓存，让浏览器直接走网络
+  // 1. 跨域请求直接 passthrough
   if (url.origin !== self.location.origin) {
-    return; // 不调用 event.respondWith()，让浏览器默认处理
-  }
-
-  // 2. API 请求：网络优先，不缓存，支持自动重试
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/user/') || url.pathname.startsWith('/notes') || url.pathname.startsWith('/note/') || url.pathname.startsWith('/categories') || url.pathname.startsWith('/category') || url.pathname.startsWith('/share/') || url.pathname.startsWith('/settings')) {
-    event.respondWith(
-      fetchWithRetry(event.request, 2) // 最多重试 2 次（共 3 次尝试）
-    );
     return;
   }
 
-  // 3. 静态资源：缓存优先，仅处理同源 GET 请求
+  // 2. 只处理 GET 请求
   if (event.request.method !== 'GET') return;
 
+  // 3. API 请求：stale-while-revalidate 策略（先返回缓存，后台刷新）
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/user/') || 
+      url.pathname.startsWith('/notes') || url.pathname.startsWith('/note/') || 
+      url.pathname.startsWith('/categories') || url.pathname.startsWith('/category') || 
+      url.pathname.startsWith('/share/') || url.pathname.startsWith('/settings')) {
+    event.respondWith(fetchWithCache(event.request));
+    return;
+  }
+
+  // 4. 静态资源：缓存优先 + 网络回退
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
 
       return fetch(event.request).then((response) => {
-        // 只缓存成功的同源基本响应
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-
-        // 克隆响应（因为 response body 只能读取一次）
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
-
         return response;
       }).catch(() => {
-        // 离线时返回离线页面（如果是导航请求）
         if (event.request.mode === 'navigate') {
           return caches.match('/modern/login.html');
         }
-        // 离线时对无法缓存的请求返回空响应（不返回 408，避免干扰）
         return new Response('');
       });
     })

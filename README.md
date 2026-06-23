@@ -3,6 +3,7 @@
 > **真正属于你的加密笔记空间，数据在浏览器加密，服务器只存密文，任何人都无法读取你的笔记内容。**
 
 [![Deployed on Cloudflare Workers](https://img.shields.io/badge/Deployed%20on-Cloudflare%20Workers-f38020?logo=cloudflare)](https://workers.cloudflare.com/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)](https://www.docker.com/)
 [![Encryption](https://img.shields.io/badge/Encryption-AES--256--GCM-blue)](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
@@ -14,9 +15,8 @@
 - [技术架构](#-技术架构)
 - [加密原理](#-加密原理)
 - [功能特性](#-功能特性)
-- [界面截图](#-界面截图)
 - [快速体验](#-快速体验)
-- [部署文档](#-部署文档)
+- [部署方式](#-部署方式)
 - [目录结构](#-目录结构)
 - [性能指标](#-性能指标)
 - [安全审计](#-安全审计)
@@ -38,9 +38,11 @@
 | 解密密钥存储位置 | 服务器数据库 | 仅在用户浏览器内存中 |
 | 服务商能否查看 | 可以 | 绝对不行 |
 
-### 🔑 无账号设计
+### 🔑 三层密码体系
 
-不需要手机号、邮箱等任何个人信息。使用**主密钥（密码）** 直接派生身份标识，主密钥即账号，完全匿名。
+1. **登录密码** — 注册/登录验证，服务端只存 SHA-256 hash
+2. **解密密码** — AES-GCM 加解密笔记内容，仅在浏览器内存中
+3. **锁屏密码** — Ctrl+L 锁定/解锁，独立于解密密码
 
 ### 🎯 一次性恢复码
 
@@ -48,90 +50,59 @@
 
 ### 📦 数据自由 — 导入导出
 
-支持**密文导出**和**明文导出**两种模式：
-- **密文导出**：导出加密后的原始数据，可在任何设备用相同主密钥导入
-- **明文导出**：导出解密后的可读内容，用于本地验证数据完整性
+支持**密文导出**和**明文导出**两种模式，数据始终掌握在自己手中。
 
-***这是你数据的终极保障，不依赖任何平台，数据始终掌握在自己手中。***
+### 🐳 双部署方案
 
-### 🌐 跨平台访问
-
-基于 Web 技术构建，任何现代浏览器均可访问，无需安装任何应用。
+- **Cloudflare Workers** — 线上服务，全球 CDN
+- **Docker 本地部署** — 本地容器化运行，数据完全离线
 
 ---
 
 ## 🏗 技术架构
 
+### Cloudflare Workers 架构
+
 ```
-┌───────────────────────────────────────────────┐
-│                用户浏览器（前端）                │
-│  ┌─────────────────────────────────────────┐  │
-│  │  经典版 UI (Tailwind CSS + ES Modules)   │  │
-│  │         ↓ AES-GCM 加密/解密              │  │
-│  │  共享加密模块 (crypto/)                  │  │
-│  │         ↓ HTTP API                       │  │
-│  └────────────────┬────────────────────────┘  │
-└───────────────────┼───────────────────────────┘
-                    │ HTTPS
-                    ▼
-┌───────────────────────────────────────────────┐
-│          Cloudflare Workers（后端 API）         │
-│  ┌──────────────┐   ┌──────────────────────┐  │
-│  │ v1 兼容路由   │   │   v2 原生路由        │  │
-│  │ (compat.)    │   │  (/api/*)            │  │
-│  └──────┬───────┘   └─────────┬────────────┘  │
-│         │                     │                │
-│         └────────┬────────────┘                │
-│                  ▼                              │
-│       Cloudflare D1 (SQLite 数据库)             │
-│       (仅存储加密后的密文)                      │
-└───────────────────────────────────────────────┘
+用户浏览器 → Cloudflare Workers → D1 (SQLite)
 ```
 
-### 前端技术栈
+### Docker 架构
 
-| 技术 | 用途 |
-|------|------|
-| **原生 JavaScript (ES Modules)** | 应用主逻辑（无框架依赖） |
-| **Tailwind CSS** | UI 样式（CDN 加载） |
-| **Web Crypto API** | AES-256-GCM 加密/解密 |
-| **PBKDF2** | 密钥派生 |
+```
+用户浏览器 → Docker 容器 → Node.js + Express → SQLite (持久化卷)
+```
 
-### 后端技术栈
+### 技术栈
 
-| 技术 | 用途 |
-|------|------|
-| **Cloudflare Workers** | Serverless 运行时 |
-| **Cloudflare D1** | SQLite 兼容数据库 |
-| **Wrangler CLI** | 部署与开发工具 |
+| 层级 | Cloudflare 部署 | Docker 部署 |
+|------|-----------------|-------------|
+| 前端 | 原生 JS + Tailwind CSS + Web Crypto API | 同左 |
+| 后端 | Cloudflare Workers + D1 | Node.js + Express + better-sqlite3 |
+| 部署 | Wrangler CLI | Docker Compose + GitHub Actions CI/CD |
 
 ---
 
 ## 🔒 加密原理
 
 ```
-用户输入主密钥 "MySecretKey"
-        │
-        ▼
-  PBKDF2 密钥派生 (100000 次迭代)
-        │
-        ├──▶ getKeyHash() ──▶ SHA-256 哈希 ──▶ 发送给服务器作为用户标识
-        │
-        └──▶ getKey() ──▶ AES-GCM 密钥 ──▶ 用于加密/解密笔记内容
+用户输入主密钥
+  │
+  ▼
+PBKDF2 密钥派生 (100000 次迭代)
+  │
+  ├──▶ getKeyHash() ──▶ SHA-256 ──▶ 服务器身份标识 (public_key)
+  │
+  └──▶ getKey() ──▶ AES-GCM 密钥 ──▶ 加密/解密笔记内容
 
-加密过程（在浏览器中完成）：
-  明文笔记 ──▶ AES-GCM 加密 ──▶ 密文 ──▶ HTTPS ──▶ Cloudflare D1
-
-解密过程（在浏览器中完成）：
-  密文 ◀── HTTPS ◀── Cloudflare D1 ◀── AES-GCM 解密 ◀── 主密钥
+加密：明文笔记 ──▶ AES-GCM ──▶ 密文 ──▶ HTTPS ──▶ 服务器
+解密：密文 ◀── HTTPS ◀── 服务器 ◀── AES-GCM ◀── 主密钥
 ```
 
 ### 关键点
-
-1. **服务器永远不存储主密钥**，只存储密钥的哈希值用于身份验证
-2. **加密和解密完全在浏览器端**使用 Web Crypto API 完成
-3. **每次笔记操作都重新加密**，确保数据安全性
-4. **不同的主密钥对应完全独立的加密空间**，互不干扰
+1. **服务器永远不存储主密钥**，只存 SHA-256 哈希
+2. **加密和解密完全在浏览器端**使用 Web Crypto API
+3. **Docker 部署也不改变加密体系**
 
 ---
 
@@ -151,16 +122,19 @@
 - [x] **仪表盘** — 数据总览、最近更新笔记
 - [x] **知识库视图** — 飞书同款知识库浏览体验
 - [x] **笔记分享** — 生成分享链接，支持过期时间和次数限制
+- [x] **三层密码体系** — 登录/解密/锁屏密码分离
+- [x] **恢复码重置** — 忘记密码可通过恢复码重置
+- [x] **一键导入导出** — 明文/密文两种模式
 - [x] **闲置自动锁定** — 防止他人使用已登录的设备
-- [x] **恢复码重置** — 主密钥丢失可通过恢复码重置
-- [x] **一键导入导出** — 明文/密文两种模式导出/导入
 - [x] **响应式布局** — 桌面端三列布局，移动端底部导航
-- [x] **暗色主题** — 全暗色 UI 设计，护眼友好
+- [x] **暗色/亮色双主题** — CSS变量体系，一键切换
+- [x] **Docker 本地部署** — Docker Compose + CI/CD 自动构建
 
 ### 🔧 开发中
 
+- [ ] Docker 全功能集成测试验证
+- [ ] Windows Electron 桌面化
 - [ ] 笔记版本历史
-- [ ] 富文本编辑器
 - [ ] 全文搜索
 - [ ] 批量操作
 
@@ -174,36 +148,43 @@
 
 > 输入任意密码（至少 8 位）即可创建你的加密空间。
 
-### 本地运行
+### Docker 本地运行
 
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/你的用户名/encrypted-notes-v2.git
 cd encrypted-notes-v2
 
-# 2. 安装后端依赖
+# 2. 一键启动（Windows）
+start-docker.bat
+
+# 3. 或手动启动
+docker compose up -d
+
+# 4. 访问 http://localhost:3000
+```
+
+### Workers 本地开发
+
+```bash
 cd backend
 npm install
-
-# 3. 启动本地开发服务器
 npx wrangler dev --port 8787
-
-# 4. 打开浏览器访问
-open http://localhost:8787
 ```
+
+访问 `http://localhost:8787`。
 
 ---
 
-## 📖 部署文档
+## 📖 部署方式
 
 完整的部署指南请参见 [docs/部署指南.md](docs/部署指南.md)，包含：
 
-- Cloudflare Workers 详细部署步骤
-- D1 数据库创建与迁移
-- 本地开发环境搭建
-- 生产环境检查清单
-- 常见问题排查
-- 版本升级指南
+| 方案 | 适用场景 | 文档 |
+|------|---------|------|
+| **Cloudflare Workers** | 线上服务 | [docs/部署指南.md](docs/部署指南.md) |
+| **Docker 本地部署** | 本地/内网使用 | [docs/部署指南.md](docs/部署指南.md) |
+| **Docker + Windows 桌面化** | 个人桌面使用 | [docs/docker-windows-deployment-guide.md](docs/docker-windows-deployment-guide.md) |
 
 ---
 
@@ -211,28 +192,34 @@ open http://localhost:8787
 
 ```
 encrypted-notes-v2/
-├── backend/                       # 后端 API（部署到 Cloudflare Worker）
-│   ├── src/
-│   │   ├── config/               # 配置文件
-│   │   ├── middleware/           # 中间件（CORS、认证）
-│   │   ├── routes/               # 路由层（请求分发）
+├── backend/                       # 后端 API
+│   ├── src/                       # 源代码
+│   │   ├── config/               # 配置（database.js + database.docker.js）
+│   │   ├── middleware/           # 中间件（CORS、认证、限流）
+│   │   ├── routes/               # 路由层
 │   │   ├── services/             # 业务逻辑层
-│   │   ├── utils/                # 工具函数
-│   │   └── index.js              # 入口文件
+│   │   └── utils/                # 工具函数
+│   ├── docker/                   # Docker 适配层
 │   ├── migrations/               # 数据库迁移脚本
+│   ├── server.js                 # Docker/Node.js 入口
 │   ├── wrangler.toml             # Cloudflare 配置
-│   └── package.json
-├── frontend/                     # 前端
+│   └── package.json              # Node.js 依赖
+├── frontend/
 │   ├── shared/                   # 共享核心代码（⚠️ 禁止修改加密逻辑）
 │   │   ├── crypto/               # 加密核心（AES-GCM + PBKDF2）
 │   │   └── api/                  # API 调用层
 │   ├── classic/                  # 经典版 UI
-│   │   ├── index.html
-│   │   ├── css/
-│   │   └── js/
-│   └── modern/                   # 现代版 UI（开发中）
-├── docs/                         # 文档
-│   └── 部署指南.md               # 部署与运维文档
+│   └── modern/                   # 现代版 UI（开发重心）
+├── docs/                         # 项目文档
+│   ├── 项目上下文.md             # 全局上下文入口
+│   ├── 执行计划.md               # 当前阶段执行计划
+│   ├── BUG日志.md                # BUG 追踪
+│   ├── 部署指南.md               # 部署文档
+│   └── history/                  # 文档历史版本（永久保留）
+├── Dockerfile                    # Docker 镜像构建
+├── docker-compose.yml            # Docker Compose 编排
+├── start-docker.bat              # Windows 一键启动
+├── .env.example                  # 环境变量模板
 └── README.md                     # 项目介绍（本文件）
 ```
 
@@ -250,8 +237,8 @@ encrypted-notes-v2/
 - ✅ 内容按需解密（打开笔记时才解密内容）
 - ✅ 并行请求（分类和笔记同时加载）
 - ✅ 内存管理（解密后释放密文）
-- 🔄 分页加载（计划中）
-- 🔄 IndexedDB 缓存（计划中）
+- ✅ 虚拟滚动（DOM 按需渲染）
+- ✅ 乐观更新（保存后即时 UI 更新，不等后端响应）
 
 ---
 
@@ -262,9 +249,11 @@ encrypted-notes-v2/
 - **所有笔记内容**使用 AES-256-GCM 加密，密钥由 PBKDF2 从主密钥派生
 - **主密钥**仅存在于用户的浏览器内存中
 - **服务器**仅存储加密后的密文和密钥哈希
+- **三层密码分离**：登录/解密/锁屏各司其职
 - **分享链接**支持设置过期时间和最大查看次数
 - **闲置自动锁定**防止未授权访问
 - **恢复码一次性使用**，用后即失效
+- **Docker 部署不改变加密体系**，所有逻辑前端不变
 
 ### 安全最佳实践
 

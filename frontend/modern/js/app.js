@@ -110,6 +110,20 @@ window.ProfileManager = ProfileManager;
 
 // ====================== 初始化 ======================
 document.addEventListener('DOMContentLoaded', async () => {
+  // 注册 Service Worker（缓存静态资源，提速二次加载）
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      LogManager.info('Service Worker 注册成功');
+      // 检查是否有等待激活的 worker，强制激活
+      if (registration.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    } catch (e) {
+      console.warn('Service Worker 注册失败:', e);
+    }
+  }
+
   // 初始化基础组件
   TimeManager.init();
   CountAnimation.init();
